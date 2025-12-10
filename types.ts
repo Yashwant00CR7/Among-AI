@@ -9,12 +9,19 @@ export enum AgentRole {
   TRAITOR = 'TRAITOR'
 }
 
+export enum ModelProvider {
+  GOOGLE = 'GOOGLE',
+  GROQ = 'GROQ',
+  OPENROUTER = 'OPENROUTER'
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
   role: AgentRole;
   avatarUrl: string;
   model: string;
+  provider: ModelProvider;
   color: string;
   persona: string; // e.g., "Skeptical", "Friendly", "Aggressive"
 }

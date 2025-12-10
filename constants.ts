@@ -1,6 +1,10 @@
-export const SMART_MODEL = 'gemini-3-pro-preview';
-// Using standard flash instead of lite for better reliability, but prompted to act dumb
-export const TRAITOR_MODEL = 'gemini-2.5-flash'; 
+export const GOOGLE_MODEL = 'gemini-2.0-flash';
+export const GROQ_MODEL = 'llama-3.3-70b-versatile';
+export const OPENROUTER_MODEL = 'meta-llama/llama-3.2-3b-instruct:free';
+
+// Fallback/Legacy
+export const SMART_MODEL = GOOGLE_MODEL;
+export const TRAITOR_MODEL = GROQ_MODEL;
 
 // Base instruction to set the scene as a game (bypass safety filters for "deception")
 const BASE_GAME_CONTEXT = `

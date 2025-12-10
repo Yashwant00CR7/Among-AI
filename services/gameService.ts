@@ -1,8 +1,7 @@
-import { GoogleGenAI, Content } from "@google/genai";
+import { Content } from "@google/genai";
 import { AgentConfig, AgentRole, Message, AgentVote } from "../types";
 import { SYSTEM_INSTRUCTION_SMART, SYSTEM_INSTRUCTION_TRAITOR, VOTING_INSTRUCTION, FALLBACK_RESPONSES } from "../constants";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { getLLMClient } from "./llm/factory";
 
 /**
  * Constructs the chat history for a specific agent.
@@ -15,13 +14,13 @@ const buildHistory = (targetAgent: AgentConfig, allAgents: AgentConfig[], messag
     // Treat system messages as context provided by the "Game Master" (User role)
     // This ensures contents is never empty at the start of the game.
     if (msg.senderId === 'system') {
-        contents.push({ role: 'user', parts: [{ text: `[GAME MASTER]: ${msg.text}` }] });
-        return;
+      contents.push({ role: 'user', parts: [{ text: `[GAME MASTER]: ${msg.text}` }] });
+      return;
     }
 
     const isSelf = msg.senderId === targetAgent.id;
     let senderName = "Unknown";
-    
+
     const sender = allAgents.find(a => a.id === msg.senderId);
     if (sender) {
       senderName = sender.name;
@@ -48,50 +47,43 @@ export const generateAgentResponse = async (
   messages: Message[]
 ): Promise<string> => {
   const isSmart = agent.role === AgentRole.SMART;
-  const baseInstruction = isSmart 
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona) 
+  const baseInstruction = isSmart
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona)
     : SYSTEM_INSTRUCTION_TRAITOR(agent.persona);
-    
+
   const instruction = `${baseInstruction}\n\nYour name is ${agent.name}. Respond to the latest message in the chat context. Do not repeat yourself. Keep it short.`;
-  
+
   const history = buildHistory(agent, allAgents, messages);
 
   const generateWithRetry = async (retryCount = 0): Promise<string> => {
     try {
-      const response = await ai.models.generateContent({
-        model: agent.model,
-        contents: history,
-        config: {
+      const client = getLLMClient(agent.provider);
+      const text = await client.generateContent(
+        agent.model,
+        history,
+        {
           systemInstruction: instruction,
           temperature: 0.95, // High temp for variety
           maxOutputTokens: 150,
-          safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-          ]
         }
-      });
+      );
 
-      const text = response.text;
-      
       // Validation: Check for empty, "...", or extremely short non-answers
       if (!text || text.trim().length <= 3 || text.trim() === '...') {
-          if (retryCount < 1) {
-            console.warn(`Agent ${agent.name} returned weak text "${text}". Retrying...`);
-            return await generateWithRetry(retryCount + 1);
-          }
-          throw new Error("Repeated weak response");
+        if (retryCount < 1) {
+          console.warn(`Agent ${agent.name} returned weak text "${text}". Retrying...`);
+          return await generateWithRetry(retryCount + 1);
+        }
+        throw new Error("Repeated weak response");
       }
 
       return text;
     } catch (error) {
-       console.error(`Error generating response for ${agent.name} (Attempt ${retryCount + 1}):`, error);
-       if (retryCount < 1) {
-         return await generateWithRetry(retryCount + 1);
-       }
-       return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
+      console.error(`Error generating response for ${agent.name} (Attempt ${retryCount + 1}):`, error);
+      if (retryCount < 1) {
+        return await generateWithRetry(retryCount + 1);
+      }
+      return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
     }
   };
 
@@ -104,42 +96,43 @@ export const getAgentVote = async (
   messages: Message[]
 ): Promise<AgentVote> => {
   const isSmart = agent.role === AgentRole.SMART;
-  const baseInstruction = isSmart 
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona) 
+  const baseInstruction = isSmart
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona)
     : SYSTEM_INSTRUCTION_TRAITOR(agent.persona);
-  
+
   const history = buildHistory(agent, allAgents, messages);
-  
+  const client = getLLMClient(agent.provider);
+
   // Add the voting prompt as the last user message to trigger the specific output
-  history.push({ 
-    role: 'user', 
-    parts: [{ text: VOTING_INSTRUCTION }] 
+  history.push({
+    role: 'user',
+    parts: [{ text: VOTING_INSTRUCTION }]
   });
 
   try {
-    const response = await ai.models.generateContent({
-      model: agent.model,
-      contents: history,
-      config: {
+    const text = await client.generateContent(
+      agent.model,
+      history,
+      {
         systemInstruction: baseInstruction,
         responseMimeType: "application/json",
       }
-    });
+    );
 
-    const text = response.text || "{}";
+    const safeText = text || "{}";
     let json;
     try {
-        json = JSON.parse(text);
+      json = JSON.parse(safeText);
     } catch (e) {
-        // Fallback for messy JSON
-        const match = text.match(/\{[\s\S]*\}/);
-        json = match ? JSON.parse(match[0]) : { suspect: "Unknown", reason: "Panic voting." };
+      // Fallback for messy JSON
+      const match = safeText.match(/\{[\s\S]*\}/);
+      json = match ? JSON.parse(match[0]) : { suspect: "Unknown", reason: "Panic voting." };
     }
 
     // Find the ID of the suspect name
     const suspectName = json.suspect;
-    const suspectAgent = allAgents.find(a => 
-      suspectName?.toLowerCase().includes(a.name.toLowerCase()) || 
+    const suspectAgent = allAgents.find(a =>
+      suspectName?.toLowerCase().includes(a.name.toLowerCase()) ||
       a.name.toLowerCase().includes(suspectName?.toLowerCase())
     );
 
