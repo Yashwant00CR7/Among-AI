@@ -81,11 +81,11 @@ export const generateAgentResponse = async (
   const generateWithRetry = async (retryCount = 0): Promise<string> => {
     try {
       console.log(`[${agent.name}] Sending request to gateway...`);
-      
+
       // Add timeout to prevent hanging
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-      
+
       const response = await fetch(GATEWAY_URL, {
         method: 'POST',
         headers: {
@@ -103,7 +103,7 @@ export const generateAgentResponse = async (
           max_tokens: 150,
         }),
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -130,7 +130,7 @@ export const generateAgentResponse = async (
       return text;
     } catch (error) {
       console.error(`❌ Error generating response for ${agent.name}:`, error);
-      
+
       // Check if it's a timeout
       if (error.name === 'AbortError') {
         console.error(`⏰ Request timeout for ${agent.name}`);
@@ -141,7 +141,7 @@ export const generateAgentResponse = async (
         return generateWithRetry(retryCount + 1);
       }
 
-      console.log(`⚠️ Using fallback response for ${agent.name}`);      return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
+      console.log(`⚠️ Using fallback response for ${agent.name}`); return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
     }
   };
 
@@ -162,9 +162,14 @@ export const getAgentVote = async (
   const history = buildHistory(agent, allAgents, messages);
 
   // Add voting prompt
+  let votingPrompt = VOTING_INSTRUCTION;
+  if (!isSmart) {
+    votingPrompt += `\n\nSTRATEGIC OVERRIDE: You are the Traitor (${agent.name}). Do NOT vote for yourself. You must frame one of the other agents to survive. Pick someone else and invent a reason if needed.`;
+  }
+
   history.push({
     role: 'user',
-    content: VOTING_INSTRUCTION,
+    content: votingPrompt,
   });
 
   try {
@@ -182,7 +187,6 @@ export const getAgentVote = async (
         ],
         temperature: 0.7,
         max_tokens: 200,
-        response_format: { type: 'json_object' },
       }),
     });
 
