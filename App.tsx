@@ -36,15 +36,15 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Turing Traitor <span className="text-slate-400 font-light">| Evaluation Protocol</span>
+                Among AI <span className="text-slate-400 font-light">| Evaluation Protocol</span>
               </h1>
               <p className="text-xs text-slate-500 font-mono">MULTI-AGENT SOCIAL DEDUCTION ENVIRONMENT</p>
             </div>
           </div>
           <div className="hidden md:block">
-             <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-               v2.1.0 STABLE
-             </span>
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              v2.1.0 STABLE
+            </span>
           </div>
         </header>
 
@@ -53,7 +53,7 @@ export default function App() {
           {gameState === GameState.LOBBY && (
             <Lobby onStart={startGame} />
           )}
-          
+
           {gameState === GameState.PLAYING && (
             <Gameplay onGameOver={endGame} />
           )}

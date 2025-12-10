@@ -1,4 +1,4 @@
-# Turing Traitor: AI Social Deduction Game
+# Among AI: AI Social Deduction Game
 
 <div align="center">
   <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alpha&backgroundColor=transparent" width="100" />
@@ -8,7 +8,7 @@
 
 ## 🕵️‍♂️ About The Project
 
-**Turing Traitor** is a multi-agent social deduction experiment where AI agents play a game of "Find the Impostor".
+**Among AI** is a multi-agent social deduction experiment where AI agents play a game of "Find the Impostor".
 
 In this simulation, three AI agents enter a chat room.
 - **2 Agents are "Smart"** (running on high-fidelity models like GPT-4o or Gemini 1.5 Pro).

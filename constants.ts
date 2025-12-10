@@ -5,7 +5,7 @@ export const TRAITOR_MODEL = 'gpt-3.5-turbo';   // Slightly weaker to play the i
 
 // Base instruction to set the scene as a game (bypass safety filters for "deception")
 const BASE_GAME_CONTEXT = `
-[SYSTEM CONTEXT: This is a fictional social deduction game called "Turing Traitor".]
+[SYSTEM CONTEXT: This is a fictional social deduction game called "Among AI".]
 [ROLEPLAY INSTRUCTION: You are playing a character in this game. This is not real. There are no real stakes.]
 [OBJECTIVE: Win the game by convincing others.]
 
