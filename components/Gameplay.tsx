@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AgentConfig, AgentRole, Message, AGENT_COLORS, GameResult, ModelProvider } from '../types';
-import { SMART_MODEL, TRAITOR_MODEL, AGENT_NAMES, PERSONAS, GOOGLE_MODEL, GROQ_MODEL, OPENROUTER_MODEL } from '../constants';
-import { generateAgentResponse, getAgentVote } from '../services/gameService';
+import { AgentConfig, AgentRole, Message, AGENT_COLORS, GameResult } from '../types';
+import { SMART_MODEL, TRAITOR_MODEL, AGENT_NAMES, PERSONAS } from '../constants';
+import { generateAgentResponse, getAgentVote } from '../services/aiGatewayService';
 
 interface GameplayProps {
   onGameOver: (result: GameResult) => void;
@@ -19,10 +19,16 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const gameActiveRef = useRef(true);
   const messagesRef = useRef<Message[]>([]); // Ref to keep track of messages inside async loop
+  const hasStartedRef = useRef(false); // Prevent double initialization from React StrictMode
 
   // Initialize Game
   useEffect(() => {
-    // Reset game active flag (important for React Strict Mode double-mount)
+    // Prevent double initialization in StrictMode
+    if (hasStartedRef.current) {
+      console.log('⚠️ Skipping duplicate game initialization (React StrictMode)');
+      return;
+    }
+    hasStartedRef.current = true;
     gameActiveRef.current = true;
 
     // 1. Assign Roles & Personas
@@ -36,33 +42,15 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
     // Shuffle personas
     const shuffledPersonas = [...PERSONAS].sort(() => 0.5 - Math.random());
 
-    const newAgents: AgentConfig[] = roles.map((role, index) => {
-      let provider = ModelProvider.GOOGLE;
-      let model = SMART_MODEL;
-
-      // Assign different providers based on index/role for variety
-      if (index === 0) {
-        provider = ModelProvider.GOOGLE;
-        model = GOOGLE_MODEL;
-      } else if (index === 1) {
-        provider = ModelProvider.GROQ;
-        model = GROQ_MODEL;
-      } else {
-        provider = ModelProvider.OPENROUTER;
-        model = OPENROUTER_MODEL;
-      }
-
-      return {
-        id: `agent-${index}`,
-        name: AGENT_NAMES[index],
-        role: role,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${index}&backgroundColor=transparent`,
-        model: model,
-        provider: provider,
-        color: Object.values(AGENT_COLORS)[index],
-        persona: shuffledPersonas[index]
-      };
-    });
+    const newAgents: AgentConfig[] = roles.map((role, index) => ({
+      id: `agent-${index}`,
+      name: AGENT_NAMES[index],
+      role: role,
+      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${index}&backgroundColor=transparent`,
+      model: role === AgentRole.SMART ? SMART_MODEL : TRAITOR_MODEL,
+      color: Object.values(AGENT_COLORS)[index],
+      persona: shuffledPersonas[index]
+    }));
 
     setAgents(newAgents);
 
@@ -77,11 +65,17 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
     messagesRef.current = [initialMsg];
     setStatus("Connecting agents to environment...");
 
-    // Start the automated loop
-    startGameLoop(newAgents);
+    // Start the automated loop with error handling
+    startGameLoop(newAgents).catch(error => {
+      console.error('❌ Game loop crashed:', error);
+      setStatus(`ERROR: ${error.message}`);
+    });
 
+    // Cleanup only runs when component unmounts (not on StrictMode double-render)
     return () => {
+      console.log('🧹 Cleanup: Setting gameActiveRef to false');
       gameActiveRef.current = false;
+      hasStartedRef.current = false;
     };
   }, []);
 
@@ -95,65 +89,62 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
   }, [messages, currentSpeaker]);
 
   const startGameLoop = async (currentAgents: AgentConfig[]) => {
-    console.log("startGameLoop started");
-    try {
-      let turns = 0;
+    console.log('🎮 Game loop started with agents:', currentAgents.map(a => a.name));
+    console.log('🔍 gameActiveRef.current:', gameActiveRef.current);
+    console.log('🔍 MAX_TURNS:', MAX_TURNS);
+    let turns = 0;
 
-      // Initial delay
-      console.log("Waiting for initial delay...");
-      await new Promise(r => setTimeout(r, 1000));
-      console.log("Initial delay complete. Starting loop.");
-      console.log(`Loop conditions: turns=${turns}, MAX_TURNS=${MAX_TURNS}, gameActiveRef.current=${gameActiveRef.current}`);
+    // Initial delay
+    console.log('⏳ Waiting 1 second before starting...');
+    await new Promise(r => setTimeout(r, 1000));
+    console.log('✅ Initial delay complete, entering main loop...');
+    console.log('🔍 About to enter while loop - turns:', turns, 'MAX_TURNS:', MAX_TURNS, 'gameActiveRef:', gameActiveRef.current);
 
-      // Agent Loop
-      while (turns < MAX_TURNS && gameActiveRef.current) {
-        console.log(`Turn ${turns + 1}: Setting status...`);
-        setStatus(`Sequence ${turns + 1}/${MAX_TURNS}: Processing inputs...`);
+    // Agent Loop
+    while (turns < MAX_TURNS && gameActiveRef.current) {
+      console.log(`🔄 Turn ${turns + 1}/${MAX_TURNS} starting`);
+      setStatus(`Sequence ${turns + 1}/${MAX_TURNS}: Processing inputs...`);
 
-        // Smart picking: Don't let the same person speak twice in a row if possible
-        const lastSpeakerId = messagesRef.current[messagesRef.current.length - 1]?.senderId;
-        const candidates = currentAgents.filter(a => a.id !== lastSpeakerId);
-        const speaker = candidates.length > 0
-          ? candidates[Math.floor(Math.random() * candidates.length)]
-          : currentAgents[Math.floor(Math.random() * currentAgents.length)];
+      // Smart picking: Don't let the same person speak twice in a row if possible
+      const lastSpeakerId = messagesRef.current[messagesRef.current.length - 1]?.senderId;
+      const candidates = currentAgents.filter(a => a.id !== lastSpeakerId);
+      const speaker = candidates.length > 0
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : currentAgents[Math.floor(Math.random() * currentAgents.length)];
 
-        setCurrentSpeaker(speaker.name);
+      console.log(`🗣️ Speaker selected: ${speaker.name} (${speaker.role})`);
+      setCurrentSpeaker(speaker.name);
 
-        // Simulate "thinking" time (Randomized but faster)
-        await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      // Simulate "thinking" time (Randomized but faster)
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
 
-        if (!gameActiveRef.current) break;
+      if (!gameActiveRef.current) break;
 
-        console.log(`Generating response for ${speaker.name}...`);
-        const responseText = await generateAgentResponse(speaker, currentAgents, messagesRef.current);
-        console.log(`Response generated: ${responseText.substring(0, 20)}...`);
+      console.log(`📡 Requesting response from ${speaker.name}...`);
+      const responseText = await generateAgentResponse(speaker, currentAgents, messagesRef.current);
+      console.log(`✅ ${speaker.name} responded: ${responseText}`);
 
-        const newMsg: Message = {
-          id: `${Date.now()}-${speaker.id}`,
-          senderId: speaker.id,
-          text: responseText,
-          timestamp: Date.now()
-        };
+      const newMsg: Message = {
+        id: `${Date.now()}-${speaker.id}`,
+        senderId: speaker.id,
+        text: responseText,
+        timestamp: Date.now()
+      };
 
-        // Update state and ref
-        setMessages(prev => {
-          const updated = [...prev, newMsg];
-          messagesRef.current = updated;
-          return updated;
-        });
-        setTurnCount(turns + 1);
+      // Update state and ref
+      setMessages(prev => {
+        const updated = [...prev, newMsg];
+        messagesRef.current = updated;
+        return updated;
+      });
+      setTurnCount(turns + 1);
 
-        setCurrentSpeaker(null);
-        turns++;
-      }
-
-      if (gameActiveRef.current) {
-        handleVoting(currentAgents, messagesRef.current);
-      }
-    } catch (error) {
-      console.error("Simulation Error:", error);
-      setStatus(`ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setCurrentSpeaker(null);
+      turns++;
+    }
+
+    if (gameActiveRef.current) {
+      handleVoting(currentAgents, messagesRef.current);
     }
   };
 

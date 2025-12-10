@@ -1,10 +1,7 @@
-export const GOOGLE_MODEL = 'gemini-2.0-flash';
-export const GROQ_MODEL = 'llama-3.3-70b-versatile';
-export const OPENROUTER_MODEL = 'meta-llama/llama-3.2-3b-instruct:free';
-
-// Fallback/Legacy
-export const SMART_MODEL = GOOGLE_MODEL;
-export const TRAITOR_MODEL = GROQ_MODEL;
+// Use models that are available on Vercel AI Gateway
+// Swap to other supported models if your gateway plan includes them.
+export const SMART_MODEL = 'gpt-4o-mini';       // Available, cheap, decent reasoning
+export const TRAITOR_MODEL = 'gpt-3.5-turbo';   // Slightly weaker to play the impostor
 
 // Base instruction to set the scene as a game (bypass safety filters for "deception")
 const BASE_GAME_CONTEXT = `
