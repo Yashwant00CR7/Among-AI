@@ -71,8 +71,8 @@ export const generateAgentResponse = async (
 ): Promise<string> => {
   const isSmart = agent.role === AgentRole.SMART;
   const baseInstruction = isSmart
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona)
-    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona);
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name))
+    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name));
 
   const instruction = `${baseInstruction}\nYour name is ${agent.name}. Respond to the latest message in the chat context. Do not repeat yourself. Keep it short.`;
 
@@ -119,7 +119,7 @@ export const generateAgentResponse = async (
       console.log(`[${agent.name}] Received: ${text.substring(0, 50)}...`);
 
       // Validation: retry if response is too weak
-      if (!text || text.length < 3 || text === '...') {
+      if (!text || text.length < 1 || text === '...') {
         if (retryCount < 1) {
           console.warn(`Agent ${agent.name} returned weak text. Retrying...`);
           return generateWithRetry(retryCount + 1);
@@ -129,11 +129,11 @@ export const generateAgentResponse = async (
 
       return text;
     } catch (error) {
-      console.error(`❌ Error generating response for ${agent.name}:`, error);
+      console.warn(`⚠️ Error generating response for ${agent.name}:`, error);
 
       // Check if it's a timeout
-      if (error.name === 'AbortError') {
-        console.error(`⏰ Request timeout for ${agent.name}`);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(`⏰ Request timeout for ${agent.name}`);
       }
 
       if (retryCount < 1) {
@@ -141,7 +141,8 @@ export const generateAgentResponse = async (
         return generateWithRetry(retryCount + 1);
       }
 
-      console.log(`⚠️ Using fallback response for ${agent.name}`); return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
+      console.log(`⚠️ Using fallback response for ${agent.name}`);
+      return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
     }
   };
 
@@ -156,8 +157,8 @@ export const getAgentVote = async (
 ): Promise<AgentVote> => {
   const isSmart = agent.role === AgentRole.SMART;
   const baseInstruction = isSmart
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona)
-    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona);
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name))
+    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name));
 
   const history = buildHistory(agent, allAgents, messages);
 
