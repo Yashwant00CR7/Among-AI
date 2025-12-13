@@ -1,18 +1,24 @@
 // Use models that are available on Vercel AI Gateway
 export const DEFAULT_SMART_MODEL = 'gpt-4o-mini';
-export const DEFAULT_TRAITOR_MODEL = 'gpt-3.5-turbo';
+export const DEFAULT_TRAITOR_MODEL = 'ministral-3b';
 
 export const AVAILABLE_MODELS = [
-  { id: 'gpt-4o', name: 'GPT-4o (OpenAI)' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini (OpenAI)' },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (OpenAI)' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (OpenAI)' },
-  { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet (Anthropic)' },
-  { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku (Anthropic)' },
-  { id: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', name: 'Llama 3.1 70B (Meta)' },
-  { id: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', name: 'Llama 3.1 8B (Meta)' },
-  { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash (Google)' },
-  { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro (Google)' },
+  { id: 'ministral-3b', name: 'Ministral 3B' },
+  { id: 'grok-4.1-fast-non-reasoning', name: 'Grok 4.1 Fast Non-Reasoning' },
+  { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
+  { id: 'gpt-oss-120b', name: 'GPT OSS 120B' },
+  { id: 'gpt-5.1-instant', name: 'GPT-5.1 Instant' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
+  { id: 'grok-4.1-fast-reasoning', name: 'Grok 4.1 Fast Reasoning' },
+  { id: 'gemma-2-9b-it', name: 'Gemma 2 9B' },
+  { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
+  { id: 'gpt-5-chat', name: 'GPT-5 Chat' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini' },
 ];
 
 // Base instruction to set the scene as a game (bypass safety filters for "deception")

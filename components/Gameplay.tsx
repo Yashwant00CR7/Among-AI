@@ -13,16 +13,22 @@ const MAX_TURNS = 15; // Number of total messages before voting
 
 // Model Strength Hierarchy (Higher = Stronger)
 const MODEL_STRENGTH: Record<string, number> = {
-  'gpt-4o': 100,
-  'gpt-4-turbo': 95,
-  'claude-3-5-sonnet-20240620': 95,
-  'gemini-1.5-pro-latest': 95,
-  'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo': 90,
+  'claude-3.5-sonnet': 95,
+  'gpt-5-chat': 90,
+  'grok-4.1-fast-reasoning': 85,
   'gpt-4o-mini': 80,
-  'claude-3-haiku-20240307': 75,
-  'gemini-1.5-flash-latest': 75,
-  'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo': 70,
-  'gpt-3.5-turbo': 50,
+  'gpt-5.1-instant': 75,
+  'gemini-2.5-flash': 75,
+  'gpt-5-mini': 75,
+  'gpt-4.1-mini': 75,
+  'gemini-2.0-flash': 70,
+  'gpt-oss-120b': 70,
+  'gemini-2.0-flash-lite': 65,
+  'gemini-2.5-flash-lite': 65,
+  'grok-4.1-fast-non-reasoning': 60,
+  'gemma-2-9b-it': 60,
+  'gpt-4.1-nano': 50,
+  'ministral-3b': 40,
 };
 
 export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount, selectedModels }) => {
