@@ -10,26 +10,28 @@
 
 **Among AI** is a multi-agent social deduction experiment where AI agents play a game of "Find the Impostor".
 
-In this simulation, three AI agents enter a chat room.
-- **2 Agents are "Smart"** (running on high-fidelity models like GPT-4o or Gemini 1.5 Pro).
-- **1 Agent is the "Traitor"** (running on a lower-fidelity model like GPT-3.5 or Gemini Flash).
+In this simulation, a group of AI agents (3-10 participants) enter a chat room.
+- **Majority are "Smart"** (running on high-fidelity models like GPT-4o, Claude 3.5, or Gemini 1.5 Pro).
+- **One Agent is the "Traitor"** (running on a lower-fidelity model or instructed to deceive).
 
 The goal of the Smart agents is to identify the Traitor based on logic errors, hallucinations, or lack of nuance.
 The goal of the Traitor is to blend in, deceive the others, and survive the vote.
 
 ## 🚀 Features
 
-- **Autonomous Agents**: 3 AI agents with unique, randomized personas (e.g., "Aggressive & Suspicious", "Chill & Observant").
+- **Dynamic Lobbies**: Configure games with 3 to 10 agents.
+- **Model Arena**: Mix and match different LLMs (OpenAI, Anthropic, Google, Meta) to see who is the best social deceiver.
 - **Real-time Chat**: Agents converse naturally, debating topics to weed out the weak link.
 - **Voting System**: A democratic voting phase where agents reason and cast votes to eliminate the suspect.
+- **Live Rankings**: Post-game analysis with efficiency scoring for correct identifications and successful deceptions.
 - **Strategic Deception**: The Traitor is programmed to deflect blame and frame others to survive.
-- **Efficiency Scoring**: Points are awarded for correct identification, survival, and successful deception.
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS (via CDN)
 - **AI Integration**: Vercel AI Gateway / OpenAI Compatible API
+- **Supported Models**: GPT-4o, Gemini 1.5 Pro/Flash, Claude 3.5 Sonnet, Llama 3.1
 
 ## 🏁 Getting Started
 
@@ -54,6 +56,7 @@ The goal of the Traitor is to blend in, deceive the others, and survive the vote
 3. **Configure Environment**
    Create a `.env.local` file in the root directory and add your API credentials:
    ```env
+   # Default Gateway URL (can be OpenAI, Groq, or Vercel AI Gateway)
    VITE_AI_GATEWAY_URL="https://your-gateway-url/v1/chat/completions"
    VITE_AI_GATEWAY_API_KEY="your_api_key_here"
    ```
@@ -65,15 +68,16 @@ The goal of the Traitor is to blend in, deceive the others, and survive the vote
 
 ## 🎮 How to Play
 
-1. Open the app in your browser.
-2. Watch the agents discuss the provided topic.
-3. Observe their behavior—can *you* spot the traitor before they do?
-4. Wait for the **Voting Phase** to see if the agents correctly identified the impostor.
+1. **Lobby Setup**: select the number of participants (3-10) and assign specific models to each agent.
+2. **Start Game**: Watch the agents discuss the provided topic.
+3. **Observation**: Read the chat logs. Can *you* spot the traitor before they do?
+4. **Voting Phase**: Wait for the agents to deliberate and cast their votes.
+5. **Results**: Review the rankings to see which model performed best as a Detective or Impostor.
 
 ## 🧠 Strategic Logic
 
-- **Smart Agents**: Instructed to analyze messages for "dumb" mistakes.
-- **Traitor Agent**: Instructed to mimic high-intelligence behavior but occasionally slip up. During voting, they are hard-coded to **never vote for themselves** and instead frame a rival.
+- **Smart Agents**: Instructed to analyze messages for "dumb" mistakes and collaborate to find the outlier.
+- **Traitor Agent**: Instructed to mimic high-intelligence behavior but occasionally slip up or provide vague answers. During voting, they are hard-coded to **never vote for themselves** and instead frame a rival.
 
 ## 📄 License
 
