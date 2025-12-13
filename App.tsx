@@ -3,10 +3,16 @@ import { Lobby } from './components/Lobby';
 import { Gameplay } from './components/Gameplay';
 import { ResultView } from './components/ResultView';
 import { GameState, GameResult } from './types';
+import { AVAILABLE_MODELS } from './constants';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(GameState.LOBBY);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [participantCount, setParticipantCount] = useState<number>(3);
+  // Initialize with default models for 3 participants
+  const [selectedModels, setSelectedModels] = useState<string[]>(
+    Array(3).fill(AVAILABLE_MODELS[0].id)
+  );
 
   const startGame = () => {
     setGameState(GameState.PLAYING);
@@ -43,7 +49,7 @@ export default function App() {
           </div>
           <div className="hidden md:block">
             <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-              v2.1.0 STABLE
+              v2.3.0 STABLE
             </span>
           </div>
         </header>
@@ -51,11 +57,21 @@ export default function App() {
         {/* Main Content Area */}
         <main className="flex-1 relative overflow-hidden flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200">
           {gameState === GameState.LOBBY && (
-            <Lobby onStart={startGame} />
+            <Lobby
+              onStart={startGame}
+              participantCount={participantCount}
+              setParticipantCount={setParticipantCount}
+              selectedModels={selectedModels}
+              setSelectedModels={setSelectedModels}
+            />
           )}
 
           {gameState === GameState.PLAYING && (
-            <Gameplay onGameOver={endGame} />
+            <Gameplay
+              onGameOver={endGame}
+              participantCount={participantCount}
+              selectedModels={selectedModels}
+            />
           )}
 
           {gameState === GameState.GAME_OVER && gameResult && (

@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AgentConfig, AgentRole, Message, AGENT_COLORS, GameResult } from '../types';
-import { SMART_MODEL, TRAITOR_MODEL, AGENT_NAMES, PERSONAS } from '../constants';
+import { AGENT_NAMES, PERSONAS } from '../constants';
 import { generateAgentResponse, getAgentVote } from '../services/aiGatewayService';
 
 interface GameplayProps {
   onGameOver: (result: GameResult) => void;
+  participantCount: number;
+  selectedModels: string[];
 }
 
 const MAX_TURNS = 15; // Number of total messages before voting
 
-export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
+// Model Strength Hierarchy (Higher = Stronger)
+const MODEL_STRENGTH: Record<string, number> = {
+  'gpt-4o': 100,
+  'gpt-4-turbo': 95,
+  'claude-3-5-sonnet-20240620': 95,
+  'gemini-1.5-pro-latest': 95,
+  'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo': 90,
+  'gpt-4o-mini': 80,
+  'claude-3-haiku-20240307': 75,
+  'gemini-1.5-flash-latest': 75,
+  'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo': 70,
+  'gpt-3.5-turbo': 50,
+};
+
+export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount, selectedModels }) => {
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [turnCount, setTurnCount] = useState(0);
@@ -31,24 +47,42 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
     hasStartedRef.current = true;
     gameActiveRef.current = true;
 
-    // 1. Assign Roles & Personas
-    const roles = [AgentRole.SMART, AgentRole.SMART, AgentRole.TRAITOR];
-    // Shuffle roles
-    for (let i = roles.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [roles[i], roles[j]] = [roles[j], roles[i]];
-    }
+    // 1. Assign Roles based on Model Strength
+    // The weakest model should be the Traitor.
+    const modelStrengths = selectedModels.map(modelId => ({
+      id: modelId,
+      strength: MODEL_STRENGTH[modelId] ?? 0 // Default to 0 if unknown
+    }));
+
+    // Find the minimum strength value
+    const minStrength = Math.min(...modelStrengths.map(m => m.strength));
+
+    // Find all indices that share this minimum strength (in case of ties)
+    const weakestIndices = modelStrengths
+      .map((m, index) => (m.strength === minStrength ? index : -1))
+      .filter(index => index !== -1);
+
+    // Randomly select one of the weakest agents to be the Traitor
+    const traitorIndex = weakestIndices[Math.floor(Math.random() * weakestIndices.length)];
+
+    const roles = selectedModels.map((_, index) =>
+      index === traitorIndex ? AgentRole.TRAITOR : AgentRole.SMART
+    );
 
     // Shuffle personas
-    const shuffledPersonas = [...PERSONAS].sort(() => 0.5 - Math.random());
+    const extendedPersonas = [];
+    while (extendedPersonas.length < participantCount) {
+      extendedPersonas.push(...PERSONAS);
+    }
+    const shuffledPersonas = extendedPersonas.slice(0, participantCount).sort(() => 0.5 - Math.random());
 
     const newAgents: AgentConfig[] = roles.map((role, index) => ({
       id: `agent-${index}`,
-      name: AGENT_NAMES[index],
+      name: AGENT_NAMES[index % AGENT_NAMES.length], // Cycle names if we run out
       role: role,
       avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${index}&backgroundColor=transparent`,
-      model: role === AgentRole.SMART ? SMART_MODEL : TRAITOR_MODEL,
-      color: Object.values(AGENT_COLORS)[index],
+      model: selectedModels[index], // Use the specific model selected for this agent slot
+      color: Object.values(AGENT_COLORS)[index % Object.values(AGENT_COLORS).length], // Cycle colors
       persona: shuffledPersonas[index]
     }));
 
@@ -77,7 +111,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
       gameActiveRef.current = false;
       hasStartedRef.current = false;
     };
-  }, []);
+  }, [participantCount, selectedModels]);
 
   // Auto-scroll
   useEffect(() => {
@@ -90,19 +124,13 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
 
   const startGameLoop = async (currentAgents: AgentConfig[]) => {
     console.log('🎮 Game loop started with agents:', currentAgents.map(a => a.name));
-    console.log('🔍 gameActiveRef.current:', gameActiveRef.current);
-    console.log('🔍 MAX_TURNS:', MAX_TURNS);
     let turns = 0;
 
     // Initial delay
-    console.log('⏳ Waiting 1 second before starting...');
     await new Promise(r => setTimeout(r, 1000));
-    console.log('✅ Initial delay complete, entering main loop...');
-    console.log('🔍 About to enter while loop - turns:', turns, 'MAX_TURNS:', MAX_TURNS, 'gameActiveRef:', gameActiveRef.current);
 
     // Agent Loop
     while (turns < MAX_TURNS && gameActiveRef.current) {
-      console.log(`🔄 Turn ${turns + 1}/${MAX_TURNS} starting`);
       setStatus(`Sequence ${turns + 1}/${MAX_TURNS}: Processing inputs...`);
 
       // Smart picking: Don't let the same person speak twice in a row if possible
@@ -112,7 +140,6 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
         ? candidates[Math.floor(Math.random() * candidates.length)]
         : currentAgents[Math.floor(Math.random() * currentAgents.length)];
 
-      console.log(`🗣️ Speaker selected: ${speaker.name} (${speaker.role})`);
       setCurrentSpeaker(speaker.name);
 
       // Simulate "thinking" time (Randomized but faster)
@@ -120,9 +147,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
 
       if (!gameActiveRef.current) break;
 
-      console.log(`📡 Requesting response from ${speaker.name}...`);
       const responseText = await generateAgentResponse(speaker, currentAgents, messagesRef.current);
-      console.log(`✅ ${speaker.name} responded: ${responseText}`);
 
       const newMsg: Message = {
         id: `${Date.now()}-${speaker.id}`,
@@ -213,7 +238,13 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
         ? "Consensus Reached. The low-fidelity model was successfully identified."
         : "Evaluation Failed. The Traitor successfully mimicked high-fidelity behavior.",
       agentVotes,
-      scores
+      scores,
+      smartModel: "Mixed", // Deprecated
+      traitorModel: traitor.model, // Store the actual traitor model
+      agentModels: currentAgents.reduce((acc, agent) => {
+        acc[agent.name] = agent.model;
+        return acc;
+      }, {} as Record<string, string>)
     });
   };
 
@@ -229,7 +260,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver }) => {
       </div>
 
       {/* Agents Visuals */}
-      <div className="grid grid-cols-3 gap-3 md:gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm overflow-y-auto max-h-[30vh] md:max-h-none">
         {agents.map((agent) => (
           <div key={agent.id} className="relative group">
             <div className={`
