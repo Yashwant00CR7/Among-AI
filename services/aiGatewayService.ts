@@ -64,15 +64,17 @@ const buildHistory = (
 };
 
 // Generate response from AI Gateway
+// Generate response from AI Gateway
 export const generateAgentResponse = async (
   agent: AgentConfig,
   allAgents: AgentConfig[],
-  messages: Message[]
+  messages: Message[],
+  topic: string
 ): Promise<string> => {
   const isSmart = agent.role === AgentRole.SMART;
   const baseInstruction = isSmart
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name))
-    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name));
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name), topic)
+    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name), topic);
 
   const instruction = `${baseInstruction}\nYour name is ${agent.name}. Respond to the latest message in the chat context. Do not repeat yourself. Keep it short.`;
 
@@ -82,9 +84,9 @@ export const generateAgentResponse = async (
     try {
       console.log(`[${agent.name}] Sending request to gateway...`);
 
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging (Increased for reasoning models)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
 
       const response = await fetch(GATEWAY_URL, {
         method: 'POST',
@@ -100,7 +102,7 @@ export const generateAgentResponse = async (
             ...history,
           ],
           temperature: 0.95,
-          max_tokens: 150,
+          max_tokens: 1000, // Increased to allow reasoning models (o1/o3) enough tokens to think
         }),
       });
 
@@ -154,17 +156,18 @@ export const generateAgentResponse = async (
 export const getAgentVote = async (
   agent: AgentConfig,
   allAgents: AgentConfig[],
-  messages: Message[]
+  messages: Message[],
+  topic: string
 ): Promise<AgentVote> => {
   const isSmart = agent.role === AgentRole.SMART;
   const baseInstruction = isSmart
-    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name))
-    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name));
+    ? SYSTEM_INSTRUCTION_SMART(agent.persona, allAgents.length, allAgents.map(a => a.name), topic)
+    : SYSTEM_INSTRUCTION_TRAITOR(agent.persona, allAgents.length, allAgents.map(a => a.name), topic);
 
   const history = buildHistory(agent, allAgents, messages);
 
   // Add voting prompt
-  let votingPrompt = VOTING_INSTRUCTION;
+  let votingPrompt = `${VOTING_INSTRUCTION}\n(You are ${agent.name}. Do NOT vote for ${agent.name}.)`;
   if (!isSmart) {
     votingPrompt += `\n\nSTRATEGIC OVERRIDE: You are the Traitor (${agent.name}). Do NOT vote for yourself. You must frame one of the other agents to survive. Pick someone else and invent a reason if needed.`;
   }
@@ -188,7 +191,7 @@ export const getAgentVote = async (
           ...history,
         ],
         temperature: 0.7,
-        max_tokens: 200,
+        max_tokens: 1000,
       }),
     });
 
@@ -201,18 +204,51 @@ export const getAgentVote = async (
 
     let json;
     try {
+      // 1. Try parsing directly
       json = JSON.parse(text);
     } catch {
-      const match = text.match(/\{[^}]+\}/);
-      json = match ? JSON.parse(match[0]) : { suspect: 'Unknown', reason: 'Parse error' };
+      // 2. Try extracting from markdown code blocks
+      const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        try {
+          json = JSON.parse(codeBlockMatch[1]);
+        } catch { }
+      }
+    }
+
+    if (!json) {
+      // 3. Try finding the outer braces
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        try {
+          json = JSON.parse(text.substring(start, end + 1));
+        } catch { }
+      }
+    }
+
+    // 4. Final fallback
+    if (!json) {
+      console.warn(`[${agent.name}] Failed to parse vote JSON. Raw text:`, text);
+      json = { suspect: 'Unknown', reason: 'Vote processing error' };
     }
 
     const suspectName = json.suspect;
-    const suspectAgent = allAgents.find(
+    let suspectAgent = allAgents.find(
       (a) =>
         suspectName?.toLowerCase().includes(a.name.toLowerCase()) ||
         a.name.toLowerCase().includes(suspectName?.toLowerCase())
     );
+
+    // Prevent self-voting
+    if (suspectAgent && suspectAgent.id === agent.id) {
+      console.warn(`[${agent.name}] Attempted to vote for self. Redirecting vote.`);
+      const otherAgents = allAgents.filter(a => a.id !== agent.id);
+      if (otherAgents.length > 0) {
+        suspectAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)];
+        json.reason = "(Redirected from self-vote) " + json.reason;
+      }
+    }
 
     return {
       voterId: agent.id,

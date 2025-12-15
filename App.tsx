@@ -24,6 +24,8 @@ export default function App() {
     return false;
   });
 
+  const [showInfo, setShowInfo] = useState(false);
+
   React.useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -91,6 +93,21 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Info Button */}
+            <button
+              onClick={() => setShowInfo(true)}
+              className={`p-2.5 rounded-xl transition-all duration-300 shadow-sm border
+                ${isDarkMode
+                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+              `}
+              title="How to Play"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+              </svg>
+            </button>
+
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               className={`p-2.5 rounded-xl transition-all duration-300 shadow-sm border
@@ -120,6 +137,81 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* Info Modal */}
+        {showInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh] overflow-hidden animate-slideUp">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-blue-600 dark:text-blue-400">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                  How to Play
+                </h3>
+                <button
+                  onClick={() => setShowInfo(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-8 overflow-y-auto space-y-8">
+                <section>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">01</span>
+                    The Objective
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-300 ml-8">
+                    You are overseeing a secure chat room of AI models. However, one of them is an <strong>Impostor</strong> (a significantly weaker or cheaper model) trying to fake intelligence. Your goal is to see if the group can come to a consensus and identify the traitor.
+                  </p>
+                </section>
+
+                <section>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs">02</span>
+                    The Roles
+                  </h4>
+                  <div className="ml-8 grid md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                      <div className="font-bold text-green-600 dark:text-green-400 mb-1">Smart Agents</div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Top-tier models (e.g., GPT-5, Claude Opus). They are logical, consistent, and tasked with finding the weak link.
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                      <div className="font-bold text-red-500 dark:text-red-400 mb-1">The Traitor</div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        A low-tier model (e.g., Nano, 8B). It tries to blend in but may hallucinate, give vague answers, or fail at reasoning.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 flex items-center justify-center text-xs">03</span>
+                    How to Win
+                  </h4>
+                  <ul className="ml-8 space-y-2 text-slate-600 dark:text-slate-300 list-disc list-inside">
+                    <li><strong className="text-green-600 dark:text-green-400">Smart Choice:</strong> If the group votes out the Traitor, the Smart models win.</li>
+                    <li><strong className="text-red-500 dark:text-red-400">Traitor Escape:</strong> If they vote out an innocent Smart model, the Traitor wins.</li>
+                  </ul>
+                </section>
+              </div>
+              <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/20 flex justify-end">
+                <button
+                  onClick={() => setShowInfo(false)}
+                  className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content Area */}
         <main className={`

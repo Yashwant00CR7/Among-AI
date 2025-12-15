@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AVAILABLE_MODELS } from '../constants';
 
 interface LobbyProps {
@@ -20,33 +20,145 @@ export const Lobby: React.FC<LobbyProps> = ({
   topic,
   setTopic
 }) => {
+  const [activeAgentIndex, setActiveAgentIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Ensure selectedModels length matches participantCount
   useEffect(() => {
     if (selectedModels.length !== participantCount) {
       const newModels = [...selectedModels];
       if (newModels.length < participantCount) {
-        // Add default models if count increased
         const toAdd = participantCount - newModels.length;
         for (let i = 0; i < toAdd; i++) {
           newModels.push(AVAILABLE_MODELS[0].id);
         }
       } else {
-        // Trim if count decreased
         newModels.splice(participantCount);
       }
       setSelectedModels(newModels);
     }
   }, [participantCount, selectedModels, setSelectedModels]);
 
-  const handleModelChange = (index: number, modelId: string) => {
-    const newModels = [...selectedModels];
-    newModels[index] = modelId;
-    setSelectedModels(newModels);
+  // Focus search input when modal opens
+  useEffect(() => {
+    if (activeAgentIndex !== null && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [activeAgentIndex]);
+
+  const handleModelSelect = (modelId: string) => {
+    if (activeAgentIndex !== null) {
+      const newModels = [...selectedModels];
+      newModels[activeAgentIndex] = modelId;
+      setSelectedModels(newModels);
+      closeModal();
+    }
   };
 
+  const closeModal = () => {
+    setActiveAgentIndex(null);
+    setSearchQuery('');
+  };
+
+  const filteredModels = AVAILABLE_MODELS.filter(m =>
+    m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-8 text-center animate-fadeIn p-6 overflow-y-auto">
+    <div className="flex flex-col items-center justify-center h-full space-y-8 text-center animate-fadeIn p-6 overflow-y-auto w-full relative">
+
+      {/* Model Selection Modal/Overlay */}
+      {activeAgentIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[80vh] overflow-hidden animate-slideUp">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Assign Model to Agent {activeAgentIndex + 1}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Search and select an AI model from the library
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+              <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 absolute left-3 top-3.5 text-slate-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search models (e.g., 'gpt-5', 'claude', 'deepseek')..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white transition-all shadow-sm"
+                />
+              </div>
+            </div>
+
+            {/* Model List */}
+            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {filteredModels.map((model) => (
+                <button
+                  key={model.id}
+                  onClick={() => handleModelSelect(model.id)}
+                  className={`
+                    group flex items-start p-3 rounded-xl border text-left transition-all hover:shadow-md
+                    ${selectedModels[activeAgentIndex] === model.id
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 ring-1 ring-blue-500'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500/50'}
+                  `}
+                >
+                  <div className={`
+                    w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mr-3 text-lg font-bold
+                    ${model.id.includes('gpt') ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                      model.id.includes('claude') ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
+                        model.id.includes('gemini') ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                          'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}
+                  `}>
+                    {model.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {model.name}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 truncate max-w-[180px]">
+                      {model.id}
+                    </div>
+                  </div>
+                  {selectedModels[activeAgentIndex] === model.id && (
+                    <div className="ml-auto flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3.5 h-3.5 text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+              {filteredModels.length === 0 && (
+                <div className="col-span-full py-12 text-center text-slate-500">
+                  No models found matching "{searchQuery}"
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4 max-w-2xl">
         <div className="inline-block p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-4 shadow-lg shadow-blue-500/20">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
@@ -58,7 +170,7 @@ export const Lobby: React.FC<LobbyProps> = ({
         </h2>
         <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed max-w-xl mx-auto">
           Protocol: {participantCount} agents. <br />
-          Assign a specific AI model to each agent to evaluate their performance in a social deduction setting.
+          Assign a specific AI model to each agent to evaluate their performance.
         </p>
 
         {/* Guidelines / How it works */}
@@ -75,10 +187,9 @@ export const Lobby: React.FC<LobbyProps> = ({
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">Configuration</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Select AI models. The system secretly assigns the <span className="font-semibold text-blue-600 dark:text-blue-400">weakest model</span> as the Impostor.
+              Select AI models. The system secretly assigns the weakest model as the Impostor.
             </p>
           </div>
-
           <div className="bg-white/50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors backdrop-blur-sm">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <span className="text-4xl font-black text-slate-900 dark:text-white">02</span>
@@ -94,7 +205,6 @@ export const Lobby: React.FC<LobbyProps> = ({
               Watch the debate. Look for hallucinations, inconsistencies, or odd phrasing.
             </p>
           </div>
-
           <div className="bg-white/50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors backdrop-blur-sm">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <span className="text-4xl font-black text-slate-900 dark:text-white">03</span>
@@ -106,7 +216,7 @@ export const Lobby: React.FC<LobbyProps> = ({
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">Consensus</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Agents vote to eliminate. If the <span className="font-semibold text-blue-600 dark:text-blue-400">Impostor</span> is caught, Smart models win.
+              Agents vote to eliminate. If the Impostor is caught, Smart models win.
             </p>
           </div>
         </div>
@@ -148,27 +258,39 @@ export const Lobby: React.FC<LobbyProps> = ({
           </div>
         </div>
 
-        {/* Model Assignment Grid */}
+        {/* Model Assignment Grid - Updated to use Modal */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
           {Array.from({ length: participantCount }).map((_, idx) => (
-            <div key={idx} className="bg-white/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2 backdrop-blur-sm transition-all hover:bg-white/80 dark:hover:bg-slate-800/80">
-              <label htmlFor={`model-select-${idx}`} className="text-sm font-bold text-slate-700 dark:text-slate-300 flex justify-between">
-                <span>Agent {idx + 1}</span>
-                <span className="text-xs font-normal text-slate-400">Model Selector</span>
-              </label>
-              <select
-                id={`model-select-${idx}`}
-                value={selectedModels[idx] || AVAILABLE_MODELS[0].id}
-                onChange={(e) => handleModelChange(idx, e.target.value)}
-                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              >
-                {AVAILABLE_MODELS.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <button
+              key={idx}
+              onClick={() => setActiveAgentIndex(idx)}
+              className="bg-white/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2 backdrop-blur-sm transition-all hover:bg-white/80 dark:hover:bg-slate-800/80 hover:scale-[1.01] hover:border-blue-300 dark:hover:border-slate-600 group"
+            >
+              <div className="flex justify-between w-full">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Agent {idx + 1}</span>
+                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors">
+                  Change Model
+                </span>
+              </div>
+
+              <div className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white text-sm rounded-xl flex items-center gap-2 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-colors">
+                <div className={`
+                    w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-xs font-bold
+                    ${(selectedModels[idx] || '').includes('gpt') ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                    (selectedModels[idx] || '').includes('claude') ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
+                      (selectedModels[idx] || '').includes('gemini') ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                        'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}
+                  `}>
+                  {(AVAILABLE_MODELS.find(m => m.id === selectedModels[idx])?.name || '?').charAt(0)}
+                </div>
+                <span className="truncate">
+                  {AVAILABLE_MODELS.find(m => m.id === selectedModels[idx])?.name || 'Select Model...'}
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 ml-auto text-slate-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </div>
+            </button>
           ))}
         </div>
       </div>
