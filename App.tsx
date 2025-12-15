@@ -67,10 +67,10 @@ export default function App() {
           ${isDarkMode ? 'bg-indigo-900' : 'bg-indigo-300'}`}></div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 h-screen flex flex-col">
+      <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 h-[100dvh] flex flex-col">
         {/* Header */}
         <header className={`
-          flex items-center justify-between mb-6 pb-4 px-6 py-4 rounded-2xl shadow-sm border
+          flex-none flex items-center justify-between mb-4 md:mb-6 pb-4 px-6 py-4 rounded-2xl shadow-sm border
           backdrop-blur-md transition-all duration-300
           ${isDarkMode
             ? 'bg-slate-900/60 border-slate-700/50'

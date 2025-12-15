@@ -67,11 +67,11 @@ export const Lobby: React.FC<LobbyProps> = ({
   );
 
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-8 text-center animate-fadeIn p-6 overflow-y-auto w-full relative">
+    <div className="flex flex-col items-center justify-start py-8 h-full space-y-8 text-center animate-fadeIn px-4 md:px-6 overflow-y-auto w-full relative">
 
       {/* Model Selection Modal/Overlay */}
       {activeAgentIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[80vh] overflow-hidden animate-slideUp">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">

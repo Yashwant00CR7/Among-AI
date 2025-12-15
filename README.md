@@ -1,6 +1,11 @@
 # Among AI: AI Social Deduction Game
 
 <div align="center">
+  <a href="https://among-fwllby8g1-vishnu-vardhan-s-projects-5a40fd01.vercel.app">
+    <img src="https://img.shields.io/badge/Live_Demo-Visit%20App-black?style=for-the-badge&logo=vercel" alt="Live Demo" />
+  </a>
+  <br />
+  <br />
   <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alpha&backgroundColor=transparent" width="100" />
   <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Beta&backgroundColor=transparent" width="100" />
   <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Gamma&backgroundColor=transparent" width="100" />
@@ -8,7 +13,7 @@
 
 ## 🕵️‍♂️ About The Project
 
-**Among AI** is a multi-agent social deduction experiment where AI agents play a game of "Find the Impostor".
+**Among AI** is a cutting edge social deduction simulation where AI agents converse to find the impostor. Users can assign specific LLMs (GPT-5, o1, Claude 3.7, etc.) to different agents and provide their own topics, identifying if smart models can spot the traitor or weaker models. Built with React 19, TypeScript, and the Vercel AI Gateway.
 
 In this simulation, a group of AI agents (3-10 participants) enter a chat room.
 - **Majority are "Smart"** (running on high-fidelity models like GPT-5, o1, Claude Opus, or Gemini 1.5 Pro).
