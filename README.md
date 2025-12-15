@@ -19,7 +19,8 @@ The goal of the Traitor is to blend in, deceive the others, and survive the vote
 
 ## 🚀 Features
 
-- **Dynamic Lobbies**: Configure games with 3 to 10 agents.
+- **Dynamic Lobbies**: Configure games with 3 to 10 agents using a sleek, interactive interface.
+- **Dark Mode Support**: Fully responsive Light/Dark themes with glassmorphism effects and animated backgrounds.
 - **Model Arena**: Mix and match different LLMs (OpenAI, Anthropic, Google, Meta) to see who is the best social deceiver.
 - **Real-time Chat**: Agents converse naturally, debating topics to weed out the weak link.
 - **Voting System**: A democratic voting phase where agents reason and cast votes to eliminate the suspect.
@@ -29,9 +30,10 @@ The goal of the Traitor is to blend in, deceive the others, and survive the vote
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite
-- **Styling**: Tailwind CSS (via CDN)
+- **Styling**: Tailwind CSS (with Dark Mode & Glassmorphism)
 - **AI Integration**: Vercel AI Gateway / OpenAI Compatible API
-- **Supported Models**: GPT-4o, Gemini 1.5 Pro/Flash, Claude 3.5 Sonnet, Llama 3.1
+- **Supported Models**: GPT-4o, Gemini 2.0 Flash/Pro, Claude 3.5 Sonnet, Llama 3.1, Grok
+- **Data Persistence**: LocalStorage for theme preferences.
 
 ## 🏁 Getting Started
 
@@ -68,7 +70,7 @@ The goal of the Traitor is to blend in, deceive the others, and survive the vote
 
 ## 🎮 How to Play
 
-1. **Lobby Setup**: select the number of participants (3-10) and assign specific models to each agent.
+1. **Lobby Setup**: Select the number of participants (3-10) and assign specific models to each agent.
 2. **Start Game**: Watch the agents discuss the provided topic.
 3. **Observation**: Read the chat logs. Can *you* spot the traitor before they do?
 4. **Voting Phase**: Wait for the agents to deliberate and cast their votes.

@@ -7,6 +7,7 @@ interface GameplayProps {
   onGameOver: (result: GameResult) => void;
   participantCount: number;
   selectedModels: string[];
+  topic: string;
 }
 
 const MAX_TURNS = 15; // Number of total messages before voting
@@ -31,7 +32,7 @@ const MODEL_STRENGTH: Record<string, number> = {
   'ministral-3b': 40,
 };
 
-export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount, selectedModels }) => {
+export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount, selectedModels, topic }) => {
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [turnCount, setTurnCount] = useState(0);
@@ -97,7 +98,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
     const initialMsg = {
       id: 'system-start',
       senderId: 'system',
-      text: 'Protocol Start. Subject topic: "Is AI actually conscious?" Discuss.',
+      text: `Protocol Start. Subject topic: "${topic}" Discuss.`,
       timestamp: Date.now()
     };
 
@@ -257,33 +258,35 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
   return (
     <div className="flex flex-col h-full gap-4 p-2 md:p-4">
       {/* Status Bar */}
-      <div className="bg-slate-100 border border-slate-200 p-3 rounded-lg flex items-center justify-between text-xs font-mono text-slate-600 shadow-inner">
+      <div className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 p-3 rounded-xl flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400 shadow-inner backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span className="font-bold">STATUS: RUNNING</span>
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+          <span className="font-bold tracking-wider">STATUS: RUNNING</span>
         </div>
-        <span className="uppercase tracking-wide hidden md:inline">{status}</span>
+        <span className="uppercase tracking-wide hidden md:inline font-semibold text-blue-600 dark:text-blue-400">{status}</span>
       </div>
 
       {/* Agents Visuals */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm overflow-y-auto max-h-[30vh] md:max-h-none">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-y-auto max-h-[30vh] md:max-h-none backdrop-blur-sm transition-colors">
         {agents.map((agent) => (
           <div key={agent.id} className="relative group">
             <div className={`
-                p-4 rounded-xl border flex flex-col items-center justify-between h-full transition-all duration-300
+                p-3 rounded-xl border flex flex-col items-center justify-between h-full transition-all duration-300
                 ${agent.color}
-                ${currentSpeaker === agent.name ? 'ring-2 ring-blue-400 scale-[1.03] shadow-md bg-white' : 'bg-white opacity-90'}
+                ${currentSpeaker === agent.name
+                ? 'ring-2 ring-blue-500 dark:ring-blue-400 scale-[1.02] shadow-lg bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-500/30'
+                : 'bg-white/90 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100'}
              `}>
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-2">
                 <div className="relative">
                   <img
                     src={agent.avatarUrl}
                     alt={agent.name}
-                    className="w-12 h-12 md:w-20 md:h-20 rounded-lg bg-slate-100 p-1 border border-slate-200 transition-transform duration-300"
-                    style={{ transform: currentSpeaker === agent.name ? 'scale(1.05)' : 'scale(1)' }}
+                    className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-slate-100 dark:bg-slate-700 p-1 border border-slate-200 dark:border-slate-600 transition-transform duration-300 shadow-sm"
+                    style={{ transform: currentSpeaker === agent.name ? 'scale(1.1)' : 'scale(1)' }}
                   />
                   {currentSpeaker === agent.name && (
-                    <div className="absolute -top-1 -right-1 flex gap-0.5 bg-white rounded-full p-1 shadow-sm border border-slate-100">
+                    <div className="absolute -top-1 -right-1 flex gap-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-100 dark:border-slate-600">
                       <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" />
                       <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce delay-100" />
                       <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce delay-200" />
@@ -291,13 +294,17 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
                   )}
                 </div>
                 <div className="text-center w-full">
-                  <span className="block font-bold text-slate-800 text-sm md:text-base truncate">{agent.name}</span>
-                  <span className="block text-[10px] md:text-xs text-slate-500 italic truncate">{agent.persona.split('&')[0]}</span>
+                  <span className={`block font-bold text-sm md:text-base truncate ${currentSpeaker === agent.name ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {agent.name}
+                  </span>
+                  <span className="block text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic truncate max-w-full px-1">
+                    {agent.persona.split('&')[0]}
+                  </span>
                 </div>
               </div>
 
               {currentSpeaker === agent.name && (
-                <div className="mt-2 w-12 h-0.5 bg-blue-400 rounded-full animate-pulse mx-auto"></div>
+                <div className="mt-2 w-16 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full animate-pulse mx-auto shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
               )}
             </div>
           </div>
@@ -307,7 +314,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
       {/* Chat Log */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-inner scroll-smooth"
+        className="flex-1 overflow-y-auto bg-white/60 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 space-y-6 shadow-inner scroll-smooth backdrop-blur-md"
       >
         {messages.map((msg) => {
           const isSystem = msg.senderId === 'system';
@@ -316,7 +323,7 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
           if (isSystem) {
             return (
               <div key={msg.id} className="flex justify-center my-6">
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-mono rounded-full border border-slate-200 uppercase tracking-widest text-center">
+                <span className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-mono rounded-full border border-slate-200 dark:border-slate-700 uppercase tracking-widest text-center shadow-sm">
                   {msg.text}
                 </span>
               </div>
@@ -325,24 +332,27 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
 
           // Visual alternating
           const align = sender && agents.indexOf(sender) % 2 === 0 ? 'justify-start' : 'justify-end';
+          const isRight = align === 'justify-end';
 
           return (
             <div
               key={msg.id}
               className={`flex w-full ${align} animate-fadeIn group`}
             >
-              <div className={`max-w-[85%] md:max-w-[75%] flex flex-col ${align === 'justify-end' ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[85%] md:max-w-[75%] flex flex-col ${isRight ? 'items-end' : 'items-start'}`}>
                 {sender && (
-                  <span className={`text-[10px] font-bold mb-1 mx-2 uppercase tracking-wider text-slate-400`}>
+                  <span className={`text-[10px] font-bold mb-1 mx-2 uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2`}>
                     {sender.name}
+                    <span className="font-normal normal-case text-slate-300 dark:text-slate-600">|</span>
+                    <span className="font-normal normal-case opacity-70">{sender.model}</span>
                   </span>
                 )}
                 <div className={`
-                  px-5 py-3 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm break-words w-full
-                  border
-                  ${align === 'justify-end'
-                    ? 'bg-blue-50 border-blue-100 text-slate-800 rounded-br-sm'
-                    : 'bg-white border-slate-100 text-slate-700 rounded-bl-sm hover:border-slate-300 transition-colors'}
+                  px-5 py-3.5 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm break-words w-full border backdrop-blur-sm
+                  transition-all duration-200 hover:shadow-md
+                  ${isRight
+                    ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/40 dark:to-indigo-900/40 border-blue-100 dark:border-blue-800/50 text-slate-800 dark:text-slate-100 rounded-br-sm'
+                    : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-sm'}
                 `}>
                   {msg.text}
                 </div>
@@ -353,15 +363,15 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
 
         {/* Loading Indicator */}
         {currentSpeaker && currentSpeaker !== 'Voting System' && (
-          <div className="flex justify-center mt-2 opacity-70">
-            <div className="bg-slate-50 px-4 py-2 rounded-full border border-slate-100 flex items-center gap-2 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-75"></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-150"></div>
+          <div className="flex justify-center mt-4">
+            <div className="bg-white dark:bg-slate-800 px-5 py-2.5 rounded-full border border-slate-100 dark:border-slate-700 flex items-center gap-3 shadow-lg animate-pulse ring-1 ring-slate-900/5 dark:ring-white/10">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-75"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-150"></div>
               </div>
-              <span className="text-xs text-slate-400 font-mono uppercase tracking-wide">
-                {currentSpeaker} is processing
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wide">
+                {currentSpeaker} is thinking...
               </span>
             </div>
           </div>
@@ -369,9 +379,9 @@ export const Gameplay: React.FC<GameplayProps> = ({ onGameOver, participantCount
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/50 shadow-inner">
         <div
-          className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
+          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(59,130,246,0.5)]"
           style={{ width: `${(turnCount / MAX_TURNS) * 100}%` }}
         />
       </div>

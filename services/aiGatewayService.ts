@@ -118,30 +118,31 @@ export const generateAgentResponse = async (
       const text = data.choices?.[0]?.message?.content?.trim() || '';
       console.log(`[${agent.name}] Received: ${text.substring(0, 50)}...`);
 
-      // Validation: retry if response is too weak
-      if (!text || text.length < 1 || text === '...') {
-        if (retryCount < 1) {
-          console.warn(`Agent ${agent.name} returned weak text. Retrying...`);
+      // Validation: retry if response is empty
+      if (!text || text.length === 0) {
+        if (retryCount < 2) { // Increased retry count
+          console.warn(`[${agent.name}] Returned empty text. Retrying (${retryCount + 1}/2)...`);
           return generateWithRetry(retryCount + 1);
         }
-        throw new Error('Repeated weak response');
+        console.warn(`[${agent.name}] Repeated empty response. Using fallback.`);
+        return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
       }
 
       return text;
     } catch (error) {
-      console.warn(`⚠️ Error generating response for ${agent.name}:`, error);
-
       // Check if it's a timeout
       if (error instanceof Error && error.name === 'AbortError') {
-        console.warn(`⏰ Request timeout for ${agent.name}`);
+        console.warn(`[${agent.name}] Request timeout`);
+      } else {
+        console.warn(`[${agent.name}] Generation error:`, error);
       }
 
-      if (retryCount < 1) {
-        console.log(`🔄 Retrying for ${agent.name}...`);
+      if (retryCount < 2) {
+        console.log(`[${agent.name}] Retrying...`);
         return generateWithRetry(retryCount + 1);
       }
 
-      console.log(`⚠️ Using fallback response for ${agent.name}`);
+      console.log(`[${agent.name}] Using fallback response`);
       return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
     }
   };
