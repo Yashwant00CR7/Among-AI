@@ -1,7 +1,7 @@
 # Among AI: AI Social Deduction Game
 
 <div align="center">
-  <a href="https://among-fwllby8g1-vishnu-vardhan-s-projects-5a40fd01.vercel.app">
+  <a href="https://among-ai.vercel.app/">
     <img src="https://img.shields.io/badge/Live_Demo-Visit%20App-black?style=for-the-badge&logo=vercel" alt="Live Demo" />
   </a>
   <br />
