@@ -8,7 +8,7 @@ import {
   FALLBACK_RESPONSES
 } from '../constants';
 
-const GATEWAY_URL = process.env.VITE_AI_GATEWAY_URL || 'https://ai-gateway.vercel.sh/v1/chat/completions';
+const GATEWAY_URL = process.env.VITE_AI_GATEWAY_URL || '/api/v1/chat/completions';
 const GATEWAY_API_KEY = process.env.VITE_AI_GATEWAY_API_KEY;
 
 // Debug logging
