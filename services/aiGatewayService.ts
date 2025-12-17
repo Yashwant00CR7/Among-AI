@@ -8,16 +8,14 @@ import {
   FALLBACK_RESPONSES
 } from '../constants';
 
-const GATEWAY_URL = process.env.VITE_AI_GATEWAY_URL || '/api/v1/chat/completions';
+const GATEWAY_URL = '/api/v1/chat/completions';
 const GATEWAY_API_KEY = process.env.VITE_AI_GATEWAY_API_KEY;
 
 // Debug logging
 if (!GATEWAY_API_KEY) {
   console.error('VITE_AI_GATEWAY_API_KEY is not set in environment variables!');
 }
-if (!GATEWAY_URL) {
-  console.error('VITE_AI_GATEWAY_URL is not set in environment variables!');
-}
+
 console.log('Gateway URL:', GATEWAY_URL);
 
 // Internal type for OpenAI chat format
